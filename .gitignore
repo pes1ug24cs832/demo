@@ -68,6 +68,7 @@ bandit-report.json
 *.sqlite
 *.sqlite3
 data/*.sqlite
+data/.encryption_key
 
 # Logs
 *.log
