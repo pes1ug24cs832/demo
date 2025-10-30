@@ -70,8 +70,11 @@ class TestBackupManager:
 
     def test_list_backups(self, backup_manager):
         """Test listing backups."""
-        # Create multiple backups
+        import time
+        
+        # Create multiple backups with slight delay to avoid filename collision
         backup_manager.create_backup("admin")
+        time.sleep(1.1)  # Ensure different timestamp (format is YYYYMMDD_HHMMSS)
         backup_manager.create_backup("admin")
         
         backups = backup_manager.list_backups()
@@ -156,43 +159,27 @@ class TestSecurityManager:
             decrypted = security_manager.decrypt_data(encrypted)
             assert decrypted == test_data
 
-    def test_verify_backup_integrity_valid(self, security_manager, temp_dir):
+    def test_verify_backup_integrity_valid(self, security_manager, tmp_path):
         """Test verifying valid backup integrity."""
         # Create encrypted backup file
         test_data = b"Backup data"
         encrypted = security_manager.encrypt_data(test_data)
         
-        backup_path = os.path.join(temp_dir, 'test_backup.enc')
-        with open(backup_path, 'wb') as f:
-            f.write(encrypted)
+        backup_path = tmp_path / 'test_backup.enc'
+        backup_path.write_bytes(encrypted)
         
         # Verify integrity
-        is_valid = security_manager.verify_backup_integrity(backup_path)
+        is_valid = security_manager.verify_backup_integrity(str(backup_path))
         
         assert is_valid is True
-        
-        # Cleanup
-        os.unlink(backup_path)
 
-    def test_verify_backup_integrity_invalid(self, security_manager, temp_dir):
+    def test_verify_backup_integrity_invalid(self, security_manager, tmp_path):
         """Test verifying corrupted backup fails."""
         # Create invalid backup file
-        backup_path = os.path.join(temp_dir, 'corrupted_backup.enc')
-        with open(backup_path, 'wb') as f:
-            f.write(b"This is not encrypted data")
+        backup_path = tmp_path / 'corrupted_backup.enc'
+        backup_path.write_bytes(b"This is not encrypted data")
         
         # Verify integrity should fail
-        is_valid = security_manager.verify_backup_integrity(backup_path)
+        is_valid = security_manager.verify_backup_integrity(str(backup_path))
         
         assert is_valid is False
-        
-        # Cleanup
-        os.unlink(backup_path)
-
-
-def temp_dir():
-    """Fixture for temporary directory."""
-    temp_dir = tempfile.mkdtemp()
-    yield temp_dir
-    if os.path.exists(temp_dir):
-        shutil.rmtree(temp_dir)
