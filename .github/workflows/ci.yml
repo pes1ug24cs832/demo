@@ -118,7 +118,7 @@ jobs:
       - name: Run coverage on ALL source code
         run: |
           echo "Running coverage analysis on src/**/*.py..."
-          pytest --cov=src --cov-report=html --cov-report=term --cov-report=xml --cov-fail-under=75 tests/
+          pytest --cov=src --cov-config=.coveragerc --cov-report=html --cov-report=term --cov-report=xml --cov-fail-under=75 tests/
       
       - name: Display coverage summary
         if: always()
