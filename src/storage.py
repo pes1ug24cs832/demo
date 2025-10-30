@@ -18,7 +18,7 @@ class StorageManager:
     def __init__(self, db_path: str = None):
         """
         Initialize storage manager.
-        
+
         Args:
             db_path: Path to SQLite database file (optional, uses config default)
         """
@@ -126,27 +126,27 @@ class StorageManager:
         """Seed initial admin user if no users exist."""
         conn = self.get_connection()
         cursor = conn.cursor()
-        
+
         cursor.execute('SELECT COUNT(*) as count FROM users')
         count = cursor.fetchone()['count']
-        
+
         if count == 0:
             # Import here to avoid circular dependency
             import hashlib
-            
+
             # Create default admin: username=admin, password=admin123
             # Use the same salt as AuthManager to ensure password verification works
             password = "admin123"
             salt = "ims_secure_salt_2025"  # Must match AuthManager.SALT
             password_hash = hashlib.sha256((password + salt).encode()).hexdigest()
-            
+
             cursor.execute('''
                 INSERT INTO users (username, password_hash, role)
                 VALUES (?, ?, ?)
             ''', ('admin', password_hash, 'admin'))
-            
+
             conn.commit()
-        
+
         conn.close()
 
     # ========== Generic CRUD Operations ==========
@@ -154,11 +154,11 @@ class StorageManager:
     def execute_query(self, query: str, params: tuple = ()) -> List[Dict]:
         """
         Execute SELECT query and return results as list of dicts.
-        
+
         Args:
             query: SQL query with ? placeholders
             params: Tuple of parameters for query
-            
+
         Returns:
             List of dictionaries representing rows
         """
@@ -172,11 +172,11 @@ class StorageManager:
     def execute_update(self, query: str, params: tuple = ()) -> int:
         """
         Execute INSERT/UPDATE/DELETE query.
-        
+
         Args:
             query: SQL query with ? placeholders
             params: Tuple of parameters for query
-            
+
         Returns:
             Last row ID for INSERT, or rows affected
         """
@@ -190,7 +190,7 @@ class StorageManager:
 
     # ========== Product Operations ==========
 
-    def add_product(self, sku: str, name: str, price: float, 
+    def add_product(self, sku: str, name: str, price: float,
                    category: str, stock: int, description: str = "") -> int:
         """Add new product (INV-F-001)."""
         query = '''
@@ -219,7 +219,7 @@ class StorageManager:
     def search_products(self, search_term: str) -> List[Dict]:
         """Search products by name or SKU (INV-F-002)."""
         query = '''
-            SELECT * FROM products 
+            SELECT * FROM products
             WHERE name LIKE ? OR sku LIKE ? OR category LIKE ?
             ORDER BY name
         '''
@@ -231,19 +231,19 @@ class StorageManager:
         allowed_fields = ['name', 'price', 'category', 'stock', 'description']
         updates = []
         params = []
-        
+
         for field, value in kwargs.items():
             if field in allowed_fields:
                 updates.append(f'{field} = ?')
                 params.append(value)
-        
+
         if not updates:
             return False
-        
+
         updates.append('updated_at = ?')
         params.append(datetime.now().isoformat())
         params.append(product_id)
-        
+
         query = f'UPDATE products SET {", ".join(updates)} WHERE id = ?'
         self.execute_update(query, tuple(params))
         return True
@@ -261,7 +261,7 @@ class StorageManager:
 
     # ========== Supplier Operations ==========
 
-    def add_supplier(self, name: str, contact_person: str = "", 
+    def add_supplier(self, name: str, contact_person: str = "",
                     email: str = "", phone: str = "", address: str = "") -> int:
         """Add new supplier (INV-F-020)."""
         query = '''
@@ -284,7 +284,7 @@ class StorageManager:
     def search_suppliers(self, search_term: str) -> List[Dict]:
         """Search suppliers by name or contact (INV-F-021)."""
         query = '''
-            SELECT * FROM suppliers 
+            SELECT * FROM suppliers
             WHERE name LIKE ? OR contact_person LIKE ? OR email LIKE ?
             ORDER BY name
         '''
@@ -296,15 +296,15 @@ class StorageManager:
         allowed_fields = ['name', 'contact_person', 'email', 'phone', 'address']
         updates = []
         params = []
-        
+
         for field, value in kwargs.items():
             if field in allowed_fields:
                 updates.append(f'{field} = ?')
                 params.append(value)
-        
+
         if not updates:
             return False
-        
+
         params.append(supplier_id)
         query = f'UPDATE suppliers SET {", ".join(updates)} WHERE id = ?'
         self.execute_update(query, tuple(params))
@@ -320,7 +320,7 @@ class StorageManager:
         '''
         return self.execute_update(query, (product_id, quantity, total_price))
 
-    def create_purchase_order(self, product_id: int, supplier_id: int, 
+    def create_purchase_order(self, product_id: int, supplier_id: int,
                             quantity: int, unit_price: float, total_price: float) -> int:
         """Create purchase order (INV-F-012)."""
         query = '''
@@ -340,14 +340,14 @@ class StorageManager:
                 ORDER BY so.order_date DESC
             '''
             return self.execute_query(query, (start_date, end_date))
-        else:
-            query = '''
-                SELECT so.*, p.name as product_name, p.sku
-                FROM sales_orders so
-                JOIN products p ON so.product_id = p.id
-                ORDER BY so.order_date DESC
-            '''
-            return self.execute_query(query)
+
+        query = '''
+            SELECT so.*, p.name as product_name, p.sku
+            FROM sales_orders so
+            JOIN products p ON so.product_id = p.id
+            ORDER BY so.order_date DESC
+        '''
+        return self.execute_query(query)
 
     def get_purchase_orders(self, start_date: str = None, end_date: str = None) -> List[Dict]:
         """Get purchase orders with optional date filtering (INV-F-031)."""
@@ -361,15 +361,15 @@ class StorageManager:
                 ORDER BY po.order_date DESC
             '''
             return self.execute_query(query, (start_date, end_date))
-        else:
-            query = '''
-                SELECT po.*, p.name as product_name, p.sku, s.name as supplier_name
-                FROM purchase_orders po
-                JOIN products p ON po.product_id = p.id
-                LEFT JOIN suppliers s ON po.supplier_id = s.id
-                ORDER BY po.order_date DESC
-            '''
-            return self.execute_query(query)
+
+        query = '''
+            SELECT po.*, p.name as product_name, p.sku, s.name as supplier_name
+            FROM purchase_orders po
+            JOIN products p ON po.product_id = p.id
+            LEFT JOIN suppliers s ON po.supplier_id = s.id
+            ORDER BY po.order_date DESC
+        '''
+        return self.execute_query(query)
 
     # ========== User Operations ==========
 
@@ -406,12 +406,12 @@ class StorageManager:
         """Get inventory summary (INV-F-030)."""
         conn = self.get_connection()
         cursor = conn.cursor()
-        
+
         cursor.execute('SELECT COUNT(*) as total_products, SUM(stock) as total_stock FROM products')
         summary = dict(cursor.fetchone())
-        
+
         cursor.execute('SELECT category, COUNT(*) as count, SUM(stock) as stock FROM products GROUP BY category')
         summary['by_category'] = [dict(row) for row in cursor.fetchall()]
-        
+
         conn.close()
         return summary
