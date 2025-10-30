@@ -87,7 +87,7 @@ jobs:
       
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: reports/test-results.xml
@@ -130,7 +130,7 @@ jobs:
       
       - name: Upload HTML coverage report
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-report-html
           path: htmlcov/
@@ -138,7 +138,7 @@ jobs:
       
       - name: Upload XML coverage report
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-report-xml
           path: coverage.xml
@@ -189,7 +189,7 @@ jobs:
       
       - name: Upload lint report
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: pylint-report
           path: reports/pylint-*.txt
@@ -249,7 +249,7 @@ jobs:
       
       - name: Upload security report
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: security-report
           path: reports/bandit-report.*
