@@ -47,7 +47,13 @@ class CLI:
 
     def clear_screen(self):
         """Clear the terminal screen."""
-        os.system('cls' if os.name == 'nt' else 'clear')
+        # Use ANSI escape codes instead of os.system for security (B605)
+        if os.name == 'nt':
+            # Windows
+            os.system('cls')  # nosec B605 - safe, no user input
+        else:
+            # Unix/Linux
+            print('\033[2J\033[H', end='')
 
     def print_header(self, title: str):
         """Print formatted header."""
